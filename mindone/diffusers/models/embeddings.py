@@ -752,6 +752,33 @@ def apply_rotary_emb(
 
         return x_out.type_as(x)
 
+class FluxPosEmbed(nn.Cell):
+    def __init__(self, theta: int, axes_dim: List[int]):
+        super().__init__()
+        self.theta = theta
+        self.axes_dim = axes_dim
+
+    def construct(self, ids):
+        n_axes = ids.shape[-1]
+        cos_out = []
+        sin_out = []
+        pos = ids.float()
+        freqs_dtype = ms.float32
+        for i in range(n_axes):
+            cos, sin = get_1d_rotary_pos_embed(
+                self.axes_dim[i],
+                pos[:, i],
+                theta=self.theta,
+                repeat_interleave_real=True,
+                use_real=True,
+                freqs_dtype=freqs_dtype,
+            )
+            cos_out.append(cos)
+            sin_out.append(sin)
+        freqs_cos = ops.cat(cos_out, -1).to(freqs_dtype)
+        freqs_sin = ops.cat(sin_out, -1).to(freqs_dtype)
+        return freqs_cos, freqs_sin
+
 
 class TimestepEmbedding(nn.Cell):
     def __init__(

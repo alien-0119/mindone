@@ -43,7 +43,6 @@ from mindone.diffusers._peft import LoraConfig, set_peft_model_state_dict
 from mindone.diffusers._peft.tuners.tuners_utils import BaseTunerLayer
 from mindone.diffusers._peft.utils import get_peft_model_state_dict
 from mindone.diffusers.optimization import get_scheduler
-from mindone.diffusers.training_utils import compute_density_for_timestep_sampling  # noqa F401
 from mindone.diffusers.training_utils import (
     AttrJitWrapper,
     TrainStep,

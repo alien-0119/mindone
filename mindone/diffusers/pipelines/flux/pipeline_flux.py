@@ -308,10 +308,6 @@ class FluxPipeline(DiffusionPipeline, FluxLoraLoaderMixin):
                 scale_lora_layers(self.text_encoder_2, lora_scale)
 
         prompt = [prompt] if isinstance(prompt, str) else prompt
-        if prompt is not None:
-            batch_size = len(prompt)
-        else:
-            batch_size = prompt_embeds.shape[0]
 
         if prompt_embeds is None:
             prompt_2 = prompt_2 or prompt
@@ -339,8 +335,7 @@ class FluxPipeline(DiffusionPipeline, FluxLoraLoaderMixin):
                 unscale_lora_layers(self.text_encoder_2, lora_scale)
 
         dtype = self.text_encoder.dtype if self.text_encoder is not None else self.transformer.dtype
-        text_ids = ops.zeros((batch_size, prompt_embeds.shape[1], 3), dtype=dtype)
-        text_ids = text_ids.tile((num_images_per_prompt, 1, 1))
+        text_ids = ops.zeros((prompt_embeds.shape[1], 3)).to(dtype=dtype)
 
         return prompt_embeds, pooled_prompt_embeds, text_ids
 
@@ -400,9 +395,8 @@ class FluxPipeline(DiffusionPipeline, FluxLoraLoaderMixin):
 
         latent_image_id_height, latent_image_id_width, latent_image_id_channels = latent_image_ids.shape
 
-        latent_image_ids = latent_image_ids[None, :].tile((batch_size, 1, 1, 1))
         latent_image_ids = latent_image_ids.reshape(
-            batch_size, latent_image_id_height * latent_image_id_width, latent_image_id_channels
+            latent_image_id_height * latent_image_id_width, latent_image_id_channels
         )
 
         return latent_image_ids.to(dtype=dtype)
