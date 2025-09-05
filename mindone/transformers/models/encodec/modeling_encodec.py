@@ -727,6 +727,7 @@ class EncodecModel(EncodecPreTrainedModel):
         Examples:
 
         ```python
+        >>> import mindspore
         >>> from datasets import load_dataset
         >>> from transformers import AutoProcessor, EncodecModel
 
@@ -737,7 +738,8 @@ class EncodecModel(EncodecPreTrainedModel):
         >>> model = EncodecModel.from_pretrained(model_id)
         >>> processor = AutoProcessor.from_pretrained(model_id)
 
-        >>> inputs = processor(raw_audio=audio_sample, return_tensors="pt")
+        >>> inputs = processor(raw_audio=audio_sample, return_tensors="np")
+        >>> inputs = {k: ms.tensor(v) for k, v in inputs.items()}
 
         >>> outputs = model(**inputs)
         >>> audio_codes = outputs.audio_codes
