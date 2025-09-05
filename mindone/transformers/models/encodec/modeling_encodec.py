@@ -475,7 +475,7 @@ class EncodecPreTrainedModel(PreTrainedModel):
             if module.padding_idx is not None:
                 module.weight.data[module.padding_idx].zero_()
         elif isinstance(module, nn.LSTM):
-            for name, param in module.named_parameters():
+            for name, param in module.parameters_and_names():
                 if "weight" in name:
                     xavier_uniform_(param)
                 elif "bias" in name:
