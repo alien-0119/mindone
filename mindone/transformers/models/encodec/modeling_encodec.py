@@ -137,6 +137,10 @@ class EncodecConv1d(nn.Cell):
         """Tiny wrapper around mint.nn.functional.pad, just to allow for reflect padding on small input.
         If this is the case, we insert extra 0 padding to the right before the reflection happens.
         """
+        # FIXME: mindspore doesn't support input pad as tuple tensor for F.pad
+        if isinstance(paddings[0], Tensor):
+            paddings = tuple(int(t.asnumpy().item()) for t in paddings)
+
         length = hidden_states.shape[-1]
         padding_left, padding_right = paddings
         if not mode == "reflect":
