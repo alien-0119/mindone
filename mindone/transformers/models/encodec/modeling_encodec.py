@@ -188,9 +188,9 @@ class EncodecConvTranspose1d(nn.Cell):
 
         self.conv = ConvTranspose1d(in_channels, out_channels, kernel_size, stride)
 
-        weight_norm = nn.utils.weight_norm
-        if hasattr(nn.utils.parametrizations, "weight_norm"):
-            weight_norm = nn.utils.parametrizations.weight_norm
+        weight_norm = WeightNorm
+        # if hasattr(nn.utils.parametrizations, "weight_norm"):
+        #     weight_norm = nn.utils.parametrizations.weight_norm
 
         if config.norm_type == "weight_norm":
             self.conv = weight_norm(self.conv)
