@@ -56,7 +56,7 @@ CONFIG_MAPPING_NAMES = OrderedDict(
         ("detr", "DetrConfig"),
         ("dinov2", "Dinov2Config"),
         ("dpt", "DPTConfig"),
-        ("encodec", "EncodecConfig")
+        ("encodec", "EncodecConfig"),
         ("gemma", "GemmaConfig"),
         ("granite", "GraniteConfig"),
         ("gemma2", "Gemma2Config"),
