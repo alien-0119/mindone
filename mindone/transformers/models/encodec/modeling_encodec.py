@@ -349,7 +349,7 @@ class EncodecEuclideanCodebook(nn.Cell):
 
     def __init__(self, config: EncodecConfig):
         super().__init__()
-        embed = mint.zeros(config.codebook_size, config.codebook_dim)
+        embed = mint.zeros((config.codebook_size, config.codebook_dim))
 
         self.codebook_size = config.codebook_size
 
@@ -436,7 +436,7 @@ class EncodecResidualVectorQuantizer(nn.Cell):
 
     def decode(self, codes: Tensor) -> Tensor:
         """Decode the given codes to the quantized representation."""
-        quantized_out = Tensor(0.0, device=codes.device)
+        quantized_out = Tensor(0.0)
         for i, indices in enumerate(codes):
             layer = self.layers[i]
             quantized = layer.decode(indices)
@@ -627,17 +627,16 @@ class EncodecModel(EncodecPreTrainedModel):
         if len(frames) == 0:
             raise ValueError("`frames` cannot be an empty list.")
 
-        device = frames[0].device
         dtype = frames[0].dtype
         shape = frames[0].shape[:-1]
         total_size = stride * (len(frames) - 1) + frames[-1].shape[-1]
 
         frame_length = frames[0].shape[-1]
-        time_vec = mint.linspace(0, 1, frame_length + 2, device=device, dtype=dtype)[1:-1]
+        time_vec = mint.linspace(0, 1, frame_length + 2, dtype=dtype)[1:-1]
         weight = 0.5 - (time_vec - 0.5).abs()
 
-        sum_weight = mint.zeros(total_size, device=device, dtype=dtype)
-        out = mint.zeros(*shape, total_size, device=device, dtype=dtype)
+        sum_weight = mint.zeros(total_size, dtype=dtype)
+        out = mint.zeros(*shape, total_size, dtype=dtype)
         offset: int = 0
 
         for frame in frames:
