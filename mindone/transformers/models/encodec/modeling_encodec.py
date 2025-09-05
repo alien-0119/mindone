@@ -32,6 +32,7 @@ from mindspore.common.initializer import HeNormal, initializer, Uniform
 
 from ...mindspore_adapter._conv import ConvTranspose1d
 from mindone.models.utils import constant_, xavier_uniform_
+from mindone.utils import WeightNorm
 
 logger = logging.get_logger(__name__)
 
@@ -99,9 +100,9 @@ class EncodecConv1d(nn.Cell):
             )
 
         self.conv = nn.Conv1d(in_channels, out_channels, kernel_size, stride, dilation=dilation)
-        weight_norm = nn.utils.weight_norm
-        if hasattr(nn.utils.parametrizations, "weight_norm"):
-            weight_norm = nn.utils.parametrizations.weight_norm
+        weight_norm = WeightNorm
+        # if hasattr(nn.utils.parametrizations, "weight_norm"):
+        #     weight_norm = nn.utils.parametrizations.weight_norm
 
         if self.norm_type == "weight_norm":
             self.conv = weight_norm(self.conv)
