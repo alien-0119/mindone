@@ -58,7 +58,7 @@ class EncodecModelTester:
         self.codebook_size = codebook_size
 
     def prepare_config_and_inputs(self):
-        input_values = floats_numpy([self.batch_size, self.num_channels, self.intermediate_size], scale=1.0)
+        input_values = floats_numpy([1, self.batch_size, self.num_channels, self.intermediate_size], scale=1.0)
         config = self.get_config()
         inputs_dict = {"input_values": input_values}
         return config, inputs_dict
