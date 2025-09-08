@@ -151,6 +151,12 @@ def get_pt2ms_mappings(m):
                 mappings[f"{name}.running_mean"] = f"{name}.moving_mean", lambda x: x
                 mappings[f"{name}.running_var"] = f"{name}.moving_variance", lambda x: x
                 mappings[f"{name}.num_batches_tracked"] = None, lambda x: x
+        else:
+            if "quantizer" in name and "codebook" in name:
+                mappings[f"{name}.inited"] = f"{name}.inited", lambda x: x
+                mappings[f"{name}.cluster_size"] = f"{name}.cluster_size", lambda x: x
+                mappings[f"{name}.embed"] = f"{name}.embed", lambda x: x
+                mappings[f"{name}.embed_avg"] = f"{name}.embed_avg", lambda x: x
     return mappings
 
 
@@ -353,7 +359,7 @@ def compute_diffs(pt_outputs: Union[torch.Tensor, np.ndarray], ms_outputs: Union
                 m = m.asnumpy()
             # relative error defined by Frobenius norm
             # dist(x, y) := ||x - y|| / ||y||, where ||·|| means Frobenius norm
-            eps = 1e-6 if np.all(m==0) and np.all(p=0) else 0
+            eps = 1e-6 if np.all(m==0) and np.all(p==0) else 0
             d = np.linalg.norm(p - m) / (np.linalg.norm(p) + eps)
             diffs.append(d)
 
