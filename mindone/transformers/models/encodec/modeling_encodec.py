@@ -446,6 +446,9 @@ class EncodecResidualVectorQuantizer(nn.Cell):
         for i, indices in enumerate(codes):
             layer = self.layers[i]
             quantized = layer.decode(indices)
+            # FIXME: if dtype of two tensors to be added are different, 
+            # the output dtype of ms and torch are different.
+            quantized_out = quantized_out.to(quantized.dtype)
             quantized_out = quantized_out + quantized
         return quantized_out
 
