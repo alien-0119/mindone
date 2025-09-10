@@ -83,6 +83,7 @@ from . import (
     qwen2_vl,
     roberta,
     segformer,
+    sew,
     siglip,
     smolvlm,
     speecht5,

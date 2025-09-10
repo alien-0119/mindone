@@ -563,6 +563,7 @@ from .models.segformer import (
     SegformerModel,
     SegformerPreTrainedModel,
 )
+from .models.sew import SEWForCTC, SEWForSequenceClassification, SEWModel, SEWPreTrainedModel
 from .models.siglip import (
     SiglipForImageClassification,
     SiglipImageProcessor,

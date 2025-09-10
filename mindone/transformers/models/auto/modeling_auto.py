@@ -104,6 +104,7 @@ MODEL_MAPPING_NAMES = OrderedDict(
         ("rembert", "RemBertModel"),
         ("resnet", "ResNetModel"),
         ("segformer", "SegformerModel"),
+        ("sew", "SEWModel"),
         ("siglip", "SiglipModel"),
         ("siglip_vision_model", "SiglipVisionModel"),
         ("smolvlm", "SmolVLMModel"),
@@ -582,6 +583,7 @@ MODEL_FOR_NEXT_SENTENCE_PREDICTION_MAPPING_NAMES = OrderedDict(
 
 MODEL_FOR_AUDIO_CLASSIFICATION_MAPPING_NAMES = OrderedDict(
     [
+        ("sew", "SEWForSequenceClassification"),
         ("wav2vec2", "Wav2Vec2ForSequenceClassification"),
         ("whisper", "WhisperForAudioClassification"),
     ]
@@ -589,6 +591,7 @@ MODEL_FOR_AUDIO_CLASSIFICATION_MAPPING_NAMES = OrderedDict(
 
 MODEL_FOR_CTC_MAPPING_NAMES = OrderedDict(
     [
+        ("sew", "SEWForCTC"),
         ("wav2vec2", "Wav2Vec2ForCTC"),
     ]
 )

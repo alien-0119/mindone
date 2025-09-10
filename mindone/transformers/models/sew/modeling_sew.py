@@ -1,6 +1,9 @@
 # coding=utf-8
 # Copyright 2021 ASAPP Inc. and the HuggingFace Inc. team. All rights reserved.
 #
+# This code is adapted from https://github.com/huggingface/transformers
+# with modifications to run transformers on mindspore.
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -30,6 +33,7 @@ from transformers import logging, SEWConfig
 
 import mindspore
 from mindspore import Parameter, Tensor, mint, nn, ops
+from mindspore.common.initializer import Constant, HeNormal, Normal, initializer
 
 logger = logging.get_logger(__name__)
 
@@ -164,13 +168,12 @@ class SEWNoLayerNormConvLayer(nn.Cell):
         self.in_conv_dim = config.conv_dim[layer_id - 1] if layer_id > 0 else 1
         self.out_conv_dim = config.conv_dim[layer_id]
 
-        self.conv = nn.Conv1d(
+        self.conv = mint.nn.Conv1d(
             self.in_conv_dim,
             self.out_conv_dim,
             kernel_size=config.conv_kernel[layer_id],
             stride=config.conv_stride[layer_id],
             bias=config.conv_bias,
-            pad_mode="valid",
         )
         self.activation = ACT2FN[config.feat_extract_activation]
 
@@ -187,13 +190,12 @@ class SEWLayerNormConvLayer(nn.Cell):
         self.in_conv_dim = config.conv_dim[layer_id - 1] if layer_id > 0 else 1
         self.out_conv_dim = config.conv_dim[layer_id]
 
-        self.conv = nn.Conv1d(
+        self.conv = mint.nn.Conv1d(
             self.in_conv_dim,
             self.out_conv_dim,
             kernel_size=config.conv_kernel[layer_id],
             stride=config.conv_stride[layer_id],
             bias=config.conv_bias,
-            pad_mode="valid",
         )
         self.layer_norm = mint.nn.LayerNorm(self.out_conv_dim, elementwise_affine=True)
         self.activation = ACT2FN[config.feat_extract_activation]
@@ -216,13 +218,12 @@ class SEWGroupNormConvLayer(nn.Cell):
         self.in_conv_dim = config.conv_dim[layer_id - 1] if layer_id > 0 else 1
         self.out_conv_dim = config.conv_dim[layer_id]
 
-        self.conv = nn.Conv1d(
+        self.conv = mint.nn.Conv1d(
             self.in_conv_dim,
             self.out_conv_dim,
             kernel_size=config.conv_kernel[layer_id],
             stride=config.conv_stride[layer_id],
             bias=config.conv_bias,
-            pad_mode="valid",
         )
         self.activation = ACT2FN[config.feat_extract_activation]
 
@@ -238,14 +239,13 @@ class SEWGroupNormConvLayer(nn.Cell):
 class SEWPositionalConvEmbedding(nn.Cell):
     def __init__(self, config):
         super().__init__()
-        self.conv = nn.Conv1d(
+        self.conv = mint.nn.Conv1d(
             config.hidden_size,
             config.hidden_size,
             kernel_size=config.num_conv_pos_embeddings,
             padding=config.num_conv_pos_embeddings // 2,
             groups=config.num_conv_pos_embedding_groups,
             stride=config.squeeze_factor,
-            pad_mode="pad",
         )
 
         # weight_norm = nn.utils.weight_norm
@@ -945,12 +945,19 @@ class SEWPreTrainedModel(PreTrainedModel):
     def _init_weights(self, module):
         """Initialize the weights"""
         if isinstance(module, SEWPositionalConvEmbedding):
-            nn.init.normal_(
-                module.conv.weight,
-                mean=0,
-                std=2 * math.sqrt(1 / (module.conv.kernel_size[0] * module.conv.in_channels)),
+            module.conv.weight_norm_cell.weight.set_data(
+                initializer(
+                    Normal(
+                        mean=0,
+                        sigma=2 * math.sqrt(1 / (module.conv.kernel_size[0] * module.conv.weight_norm_cell.in_channels)),
+                    ),
+                    module.conv.weight_norm_cell.weight.shape,
+                    module.conv.weight_norm_cell.weight.dtype,
+                ),
             )
-            nn.init.constant_(module.conv.bias, 0)
+            module.conv.weight_norm_cell.bias.set_data(
+                initializer(Constant(0), module.conv.weight_norm_cell.bias.shape, module.conv.weight_norm_cell.bias.dtype)
+            )
         elif isinstance(module, mint.nn.Linear):
             # Slightly different from the TF version which uses truncated_normal for initialization
             module.weight.data.normal_(mean=0.0, std=self.config.initializer_range)
@@ -968,7 +975,7 @@ class SEWPreTrainedModel(PreTrainedModel):
             #         with deepspeed.zero.GatheredParameters(module.weight, modifier_rank=0):
             #             nn.init.kaiming_normal_(module.weight.data)
             # else:
-            nn.init.kaiming_normal_(module.weight.data)
+            module.weight.data.set_data(initializer(HeNormal(), module.weight.data.shape, module.weight.data.dtype))
 
         if isinstance(module, (mint.nn.Linear, nn.Conv1d)) and module.bias is not None:
             module.bias.data.zero_()
@@ -1013,7 +1020,9 @@ class SEWModel(SEWPreTrainedModel):
         self.feature_dropout = mint.nn.Dropout(config.feat_proj_dropout)
 
         if config.mask_time_prob > 0.0 or config.mask_feature_prob > 0.0:
-            self.masked_spec_embed = Parameter(Tensor(config.hidden_size).uniform_())
+            # FIXME: mindspore does not support to create a tensor of shape [config.hidden_size,] by ms.tensor
+            # self.masked_spec_embed = Parameter(Tensor(config.hidden_size).uniform_())
+            self.masked_spec_embed = Parameter(mint.randn((config.hidden_size,)).uniform_())
 
         self.encoder = SEWEncoder(config)
 
@@ -1041,7 +1050,7 @@ class SEWModel(SEWPreTrainedModel):
 
         if mask_time_indices is not None:
             # apply SpecAugment along time axis with given mask_time_indices
-            hidden_states[mask_time_indices] = self.masked_spec_embed.to(hidden_states.dtype)
+            hidden_states[mask_time_indices] = self.masked_spec_embed.set_dtype(hidden_states.dtype)
         elif self.config.mask_time_prob > 0 and self.training:
             mask_time_indices = _compute_mask_indices(
                 (batch_size, sequence_length),
@@ -1051,7 +1060,7 @@ class SEWModel(SEWPreTrainedModel):
                 min_masks=self.config.mask_time_min_masks,
             )
             mask_time_indices = Tensor(mask_time_indices, dtype=mindspore.bool)
-            hidden_states[mask_time_indices] = self.masked_spec_embed.to(hidden_states.dtype)
+            hidden_states[mask_time_indices] = self.masked_spec_embed.set_dtype(hidden_states.dtype)
 
         if self.config.mask_feature_prob > 0 and self.training:
             # generate indices & apply SpecAugment along feature axis
