@@ -1023,7 +1023,7 @@ class SEWModel(SEWPreTrainedModel):
         if config.mask_time_prob > 0.0 or config.mask_feature_prob > 0.0:
             # FIXME: mindspore does not support to create a tensor of shape [config.hidden_size,] by ms.tensor
             # self.masked_spec_embed = Parameter(Tensor(config.hidden_size).uniform_())
-            self.masked_spec_embed = Parameter(mint.randn((config.hidden_size,)).uniform_())
+            self.masked_spec_embed = Parameter(mint.empty((config.hidden_size,)).uniform_())
 
         self.encoder = SEWEncoder(config)
 
