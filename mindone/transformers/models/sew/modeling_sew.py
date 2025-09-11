@@ -1213,7 +1213,35 @@ class SEWForCTC(SEWPreTrainedModel):
             the sequence length of the output logits. Indices are selected in `[-100, 0, ..., config.vocab_size - 1]`.
             All labels set to `-100` are ignored (masked), the loss is only computed for labels in `[0, ...,
             config.vocab_size - 1]`.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoProcessor
+        >>> from mingone.transformers.models.sew import SEWForCTC
+        >>> from datasets import load_dataset
+        >>> import mindspore as ms
+
+        >>> dataset = load_dataset("hf-internal-testing/librispeech_asr_demo", "clean", split="validation", trust_remote_code=True)
+        >>> dataset = dataset.sort("id")
+        >>> sampling_rate = dataset.features["audio"].sampling_rate
+
+        >>> processor = AutoProcessor.from_pretrained("asapp/sew-tiny-100k-ft-ls100h")
+        >>> model = SEWForCTC.from_pretrained("asapp/sew-tiny-100k-ft-ls100h")
+
+        >>> # audio file is decoded on the fly
+        >>> inputs = processor(dataset[0]["audio"]["array"], sampling_rate=sampling_rate, return_tensors="np")
+        >>> inputs = {k: ms.tensor(v) for k, v in inputs.items()}
+       
+        >>> logits = model(**inputs).logits
+        >>> predicted_ids = ms.mint.argmax(logits, dim=-1)
+
+        >>> # transcribe speech
+        >>> transcription = processor.batch_decode(predicted_ids)
+        >>> transcription[0]
+        'MISTER QUILTER IS THE APPOSTILE OF THE MIDDLE CLASSES AND WE ARE GLAD TO WELCOME HIS GOSPOLLE'
         """
+
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         if labels is not None and labels.max() >= self.config.vocab_size:
@@ -1249,16 +1277,14 @@ class SEWForCTC(SEWPreTrainedModel):
             # ctc_loss doesn't support fp16
             log_probs = mint.nn.functional.log_softmax(logits, dim=-1, dtype=mindspore.float32).transpose(0, 1)
 
-            ctc_loss = nn.CTCLoss(
-                blank=self.config.pad_token_id,
-                reduction=self.config.ctc_loss_reduction,
-                zero_infinity=self.config.ctc_zero_infinity,
-            )
-            loss = ctc_loss(
+            loss = ops.ctc_loss(
                 log_probs,
                 flattened_targets,
                 input_lengths,
                 target_lengths,
+                self.config.pad_token_id,
+                self.config.ctc_loss_reduction,
+                self.config.ctc_zero_infinity,
             )
 
         if not return_dict:
@@ -1330,6 +1356,36 @@ class SEWForSequenceClassification(SEWPreTrainedModel):
             Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
             config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
             `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoFeatureExtractor
+        >>> from mingone.transformers.models.sew import SEWForSequenceClassification
+        >>> from datasets import load_dataset
+        >>> import mindspore as ms
+
+        >>> dataset = load_dataset("hf-internal-testing/librispeech_asr_demo", "clean", split="validation", trust_remote_code=True)
+        >>> dataset = dataset.sort("id")
+        >>> sampling_rate = dataset.features["audio"].sampling_rate
+
+        >>> feature_extractor = AutoFeatureExtractor.from_pretrained("anton-l/sew-mid-100k-ft-keyword-spotting")
+        >>> model = SEWForSequenceClassification.from_pretrained("anton-l/sew-mid-100k-ft-keyword-spotting")
+
+        >>> # audio file is decoded on the fly
+        >>> inputs = feature_extractor(dataset[0]["audio"]["array"], sampling_rate=sampling_rate, return_tensors="np")
+        >>> inputs = {k: ms.tensor(v) for k, v in inputs.items()}
+
+        >>> logits = model(**inputs).logits
+
+        >>> predicted_class_ids = torch.argmax(logits, dim=-1).item()
+        >>> predicted_label = model.config.id2label[predicted_class_ids]
+
+        >>> # compute loss - target_label is e.g. "down"
+        >>> target_label = model.config.id2label[0]
+        >>> inputs["labels"] = torch.tensor([model.config.label2id[target_label]])
+        >>> loss = model(**inputs).loss
+        >>> round(loss.item(), 2)
         """
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
