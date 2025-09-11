@@ -25,8 +25,9 @@ import numpy as np
 from ...activations import ACT2FN
 from ...modeling_outputs import BaseModelOutput, CausalLMOutput, SequenceClassifierOutput
 from ...modeling_utils import PreTrainedModel
-from ...mindspore_adapter import dtype_to_min, scaled_dot_product_attention
+from ...mindspore_adapter import dtype_to_min
 from ...integrations.flash_attention import flash_attention_forward
+from ...integrations.sdpa_attention import scaled_dot_product_attention
 from ....utils import WeightNorm
 
 from transformers import logging, SEWConfig
