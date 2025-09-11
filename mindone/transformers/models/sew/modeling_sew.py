@@ -995,7 +995,7 @@ class SEWPreTrainedModel(PreTrainedModel):
         return input_lengths
 
     def _get_feature_vector_attention_mask(self, feature_vector_length: int, attention_mask: Tensor):
-        output_lengths = self._get_feat_extract_output_lengths(attention_mask.sum(-1)).to(mindspore.long)
+        output_lengths = self._get_feat_extract_output_lengths(attention_mask.sum(-1)).to(mindspore.int64)
         batch_size = attention_mask.shape[0]
 
         attention_mask = mint.zeros(
@@ -1236,9 +1236,9 @@ class SEWForCTC(SEWPreTrainedModel):
         if labels is not None:
             # retrieve loss input_lengths from attention_mask
             attention_mask = (
-                attention_mask if attention_mask is not None else mint.ones_like(input_values, dtype=mindspore.long)
+                attention_mask if attention_mask is not None else mint.ones_like(input_values, dtype=mindspore.int64)
             )
-            input_lengths = self._get_feat_extract_output_lengths(attention_mask.sum(-1)).to(mindspore.long)
+            input_lengths = self._get_feat_extract_output_lengths(attention_mask.sum(-1)).to(mindspore.int64)
 
             # assuming that padded tokens are filled with -100
             # when not being attended to
