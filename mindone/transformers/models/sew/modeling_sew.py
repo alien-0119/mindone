@@ -1249,14 +1249,16 @@ class SEWForCTC(SEWPreTrainedModel):
             # ctc_loss doesn't support fp16
             log_probs = mint.nn.functional.log_softmax(logits, dim=-1, dtype=mindspore.float32).transpose(0, 1)
 
-            loss = ops.ctc_loss(
+            ctc_loss = nn.CTCLoss(
+                blank=self.config.pad_token_id,
+                reduction=self.config.ctc_loss_reduction,
+                zero_infinity=self.config.ctc_zero_infinity,
+            )
+            loss = ctc_loss(
                 log_probs,
                 flattened_targets,
                 input_lengths,
                 target_lengths,
-                blank=self.config.pad_token_id,
-                reduction=self.config.ctc_loss_reduction,
-                zero_infinity=self.config.ctc_zero_infinity,
             )
 
         if not return_dict:
