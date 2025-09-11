@@ -150,20 +150,18 @@ SEW_CASES = [
         {},
         {
             "logits": "logits",
-            "hidden_states": "hidden_states",
         },
     ],
     [
-        "SEWForConditionalGeneration",
-        "transformers.SEWForConditionalGeneration",
-        "mindone.transformers.SEWForConditionalGeneration",
+        "SEWForSequenceClassification",
+        "transformers.SEWForSequenceClassification",
+        "mindone.transformers.SEWForSequenceClassification",
         (config,),
         {},
         (input_values, attention_mask),
         {},
         {
             "logits": "logits",
-            "hidden_states": "hidden_states",
         },
     ],
 ]
