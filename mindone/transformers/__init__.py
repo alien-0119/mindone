@@ -152,6 +152,7 @@ from .models.auto import (
     AutoModelWithLMHead,
     AutoProcessor,
 )
+from .models.bamba import BambaForCausalLM, BambaModel, BambaPreTrainedModel
 from .models.bart import (
     BartForCausalLM,
     BartForConditionalGeneration,
@@ -461,6 +462,13 @@ from .models.mobilebert import (
     MobileBertModel,
     MobileBertPreTrainedModel,
 )
+from .models.modernbert import (
+    ModernBertForMaskedLM,
+    ModernBertForSequenceClassification,
+    ModernBertForTokenClassification,
+    ModernBertModel,
+    ModernBertPreTrainedModel,
+)
 from .models.mpt import (
     MptForCausalLM,
     MptForQuestionAnswering,
@@ -483,6 +491,16 @@ from .models.mvp import (
     MvpForSequenceClassification,
     MvpModel,
     MvpPreTrainedModel,
+)
+from .models.nystromformer import (
+    NystromformerEncoder,
+    NystromformerForMaskedLM,
+    NystromformerForMultipleChoice,
+    NystromformerForQuestionAnswering,
+    NystromformerForSequenceClassification,
+    NystromformerForTokenClassification,
+    NystromformerModel,
+    NystromformerPreTrainedModel,
 )
 from .models.opt import (
     OPTForCausalLM,
@@ -551,6 +569,7 @@ from .models.roberta import (
     RobertaModel,
     RobertaPreTrainedModel,
 )
+from .models.rwkv import RwkvForCausalLM, RwkvModel, RwkvPreTrainedModel
 from .models.segformer import (
     SegformerDecodeHead,
     SegformerForImageClassification,
@@ -653,7 +672,19 @@ from .models.xlm_roberta_xl import (
     XLMRobertaXLModel,
     XLMRobertaXLPreTrainedModel,
 )
+<<<<<<< HEAD
 from .pipelines import TextGenerationPipeline, pipeline
+=======
+from .models.yolos import YolosForObjectDetection, YolosImageProcessor, YolosModel, YolosPreTrainedModel
+from .models.zamba import ZambaForCausalLM, ZambaForSequenceClassification, ZambaModel, ZambaPreTrainedModel
+from .pipelines import (
+    ImageToImagePipeline,
+    ImageToTextPipeline,
+    TextGenerationPipeline,
+    VisualQuestionAnsweringPipeline,
+    pipeline,
+)
+>>>>>>> 9c8a2966 (feat(transformers): add bamba, modernbert, rwkv, nystromformer and Zamba model (#1241))
 from .processing_utils import ProcessorMixin
 
 if version.parse(transformers.__version__) >= version.parse("4.51.0"):

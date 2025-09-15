@@ -21,6 +21,7 @@ from . import (
     albert,
     aria,
     auto,
+    bamba,
     bart,
     bert,
     big_bird,
@@ -68,8 +69,10 @@ from . import (
     mistral,
     mixtral,
     mobilebert,
+    modernbert,
     mpt,
     mvp,
+    nystromformer,
     opt,
     paligemma,
     persimmon,
@@ -81,6 +84,7 @@ from . import (
     qwen2_audio,
     qwen2_vl,
     roberta,
+    rwkv,
     segformer,
     siglip,
     smolvlm,
@@ -93,6 +97,11 @@ from . import (
     vits,
     wav2vec2,
     xlm_roberta,
+<<<<<<< HEAD
+=======
+    yolos,
+    zamba,
+>>>>>>> 9c8a2966 (feat(transformers): add bamba, modernbert, rwkv, nystromformer and Zamba model (#1241))
 )
 
 if version.parse(transformers.__version__) >= version.parse("4.51.0"):
