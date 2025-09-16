@@ -113,6 +113,7 @@ MODEL_MAPPING_NAMES = OrderedDict(
         ("siglip_vision_model", "SiglipVisionModel"),
         ("smolvlm", "SmolVLMModel"),
         ("smolvlm_vision", "SmolVLMVisionTransformer"),
+        ("speech_encoder_decoder", "SpeechEncoderDecoderModel"),
         ("speecht5", "SpeechT5Model"),
         ("swin2sr", "Swin2SRModel"),
         ("t5", "T5Model"),
