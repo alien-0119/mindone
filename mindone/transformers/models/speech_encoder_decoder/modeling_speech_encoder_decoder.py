@@ -166,7 +166,7 @@ class SpeechEncoderDecoderModel(PreTrainedModel, GenerationMixin):
                 "Fast initialization is currently not supported for SpeechEncoderDecoderModel. "
                 "Falling back to slow initialization..."
             )
-        kwargs["_fast_init"] = False
+        # kwargs["_fast_init"] = False
         return super().from_pretrained(*args, **kwargs)
 
     @classmethod
@@ -345,7 +345,7 @@ class SpeechEncoderDecoderModel(PreTrainedModel, GenerationMixin):
 
         ```python
         >>> from transformers import AutoProcessor
-        >>> from mindone.transformers.models import SpeechEncoderDecoderModel
+        >>> from mindone.transformers.models.speech_encoder_decoder import SpeechEncoderDecoderModel
         >>> from datasets import load_dataset
         >>> import mindspore as ms
 
