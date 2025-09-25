@@ -52,6 +52,7 @@ MODEL_MAPPING_NAMES = OrderedDict(
         ("clip_vision_model", "CLIPVisionModel"),
         ("convnext", "ConvNextModel"),
         ("convnextv2", "ConvNextV2Model"),
+        ("csm", "CsmForConditionalGeneration"),
         ("deberta", "DebertaModel"),
         ("opt", "OPTModel"),
         ("deberta-v2", "DebertaV2Model"),
@@ -598,7 +599,11 @@ MODEL_FOR_TEXT_TO_SPECTROGRAM_MAPPING_NAMES = OrderedDict(
     ]
 )
 
-MODEL_FOR_TEXT_TO_WAVEFORM_MAPPING_NAMES = OrderedDict()
+MODEL_FOR_TEXT_TO_WAVEFORM_MAPPING_NAMES = OrderedDict(
+    [
+        ("csm", "CsmForConditionalGeneration"),
+    ]
+)
 
 MODEL_FOR_ZERO_SHOT_IMAGE_CLASSIFICATION_MAPPING_NAMES = OrderedDict(
     [
