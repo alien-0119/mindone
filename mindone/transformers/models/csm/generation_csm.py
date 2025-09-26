@@ -20,12 +20,13 @@ import os
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, Union
 
-from transformers.generation.configuration_utils import GenerateDecoderOnlyOutput, GenerationConfig, GenerationMode
+from transformers.generation.configuration_utils import GenerationConfig, GenerationMode
 
 import mindspore
 from mindspore import Tensor, mint
 
 from ...generation import GenerationMixin
+from ...generation.utils import GenerateDecoderOnlyOutput
 from ...generation.logits_process import LogitsProcessorList
 from ...generation.stopping_criteria import MaxLengthCriteria, StoppingCriteriaList
 from ...generation.utils import GenerateNonBeamOutput

@@ -27,7 +27,6 @@ from typing import Callable, Optional, Union
 
 from transformers import CsmConfig, CsmDepthDecoderConfig
 from transformers.integrations import use_kernel_forward_from_hub
-from transformers.models.csm.generation_csm import CsmGenerationMixin
 from transformers.utils import ModelOutput, TransformersKwargs
 
 import mindspore
@@ -42,8 +41,9 @@ from ...modeling_rope_utils import ROPE_INIT_FUNCTIONS, dynamic_rope_update
 from ...modeling_utils import ALL_ATTENTION_FUNCTIONS, PreTrainedModel
 from ...processing_utils import Unpack
 from ...utils import logging
+from ...utils.generic import check_model_inputs
 from ..auto import AutoModel
-# from .generation_csm import CsmGenerationMixin
+from .generation_csm import CsmGenerationMixin
 
 logger = logging.get_logger(__name__)
 
@@ -392,6 +392,7 @@ class CsmDepthDecoderModel(CsmPreTrainedModel):
         # Initialize weights and apply final processing
         self.post_init()
 
+    @check_model_inputs
     def construct(
         self,
         input_ids: Tensor = None,
@@ -636,6 +637,7 @@ class CsmBackboneModel(CsmPreTrainedModel):
         # Initialize weights and apply final processing
         self.post_init()
 
+    @check_model_inputs
     def construct(
         self,
         input_ids: Optional[Tensor] = None,
@@ -705,7 +707,8 @@ class CsmBackboneModel(CsmPreTrainedModel):
         )
 
 
-class CsmForConditionalGeneration(CsmPreTrainedModel, CsmGenerationMixin):
+# FIXME: put CsmPreTrainedModel front of CsmGenerationMixin
+class CsmForConditionalGeneration(CsmGenerationMixin, CsmPreTrainedModel):
     _tied_weights_keys = [
         "backbone_model.embed_tokens.embed_audio_tokens.weight",
         "depth_decoder.model.embed_tokens.weight",
@@ -960,8 +963,7 @@ class CsmForConditionalGeneration(CsmPreTrainedModel, CsmGenerationMixin):
         ...     return_dict=True,
         ...     output_labels=True,
         ... )
-        >>> inputs = {k: v.numpy() for k, v in inputs.items()}
-        >>> inputs = {k: ms.tensor(v) for k, v in inputs.items()}
+        >>> inputs = {k: ms.tensor(v.numpy()) for k, v in inputs.items()}
 
         >>> model = CsmForConditionalGeneration.from_pretrained(model_id)
         >>> output = model(**inputs)
