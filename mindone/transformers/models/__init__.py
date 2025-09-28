@@ -98,6 +98,7 @@ from . import (
     instructblipvideo,
     jetmoe,
     kosmos2,
+    kyutai_speech_to_text,
     levit,
     lilt,
     llama,

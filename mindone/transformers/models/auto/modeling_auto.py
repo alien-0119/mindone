@@ -117,6 +117,7 @@ MODEL_MAPPING_NAMES = OrderedDict(
         ("imagegpt", "ImageGPTModel"),
         ("jetmoe", "JetMoeModel"),
         ("kosmos-2", "Kosmos2Model"),
+        ("kyutai_speech_to_text", "KyutaiSpeechToTextModel"),
         ("led", "LEDModel"),
         ("levit", "LevitModel"),
         ("lilt", "LiltModel"),
@@ -687,6 +688,7 @@ MODEL_FOR_SEQ_TO_SEQ_CAUSAL_LM_MAPPING_NAMES = OrderedDict(
 
 MODEL_FOR_SPEECH_SEQ_2_SEQ_MAPPING_NAMES = OrderedDict(
     [
+        ("kyutai_speech_to_text", "KyutaiSpeechToTextForConditionalGeneration"),
         ("moonshine", "MoonshineForConditionalGeneration"),
         ("pop2piano", "Pop2PianoForConditionalGeneration"),
         ("seamless_m4t_v2", "SeamlessM4Tv2ForSpeechToText"),
