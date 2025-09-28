@@ -87,6 +87,7 @@ MODEL_MAPPING_NAMES = OrderedDict(
         ("led", "LEDModel"),
         ("levit", "LevitModel"),
         ("llama", "LlamaModel"),
+        ("kyutai_speech_to_text", "KyutaiSpeechToTextModel"),
         ("mimi", "MimiModel"),
         ("mistral", "MistralModel"),
         ("mobilebert", "MobileBertModel"),
@@ -424,6 +425,7 @@ MODEL_FOR_SEQ_TO_SEQ_CAUSAL_LM_MAPPING_NAMES = OrderedDict(
 
 MODEL_FOR_SPEECH_SEQ_2_SEQ_MAPPING_NAMES = OrderedDict(
     [
+        ("kyutai_speech_to_text", "KyutaiSpeechToTextForConditionalGeneration"),
         ("speecht5", "SpeechT5ForSpeechToText"),
         ("whisper", "WhisperForConditionalGeneration"),
     ]

@@ -63,6 +63,7 @@ from . import (
     llava_next,
     llava_next_video,
     llava_onevision,
+    kyutai_speech_to_text,
     m2m_100,
     megatron_bert,
     mimi,

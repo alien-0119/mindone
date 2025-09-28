@@ -28,8 +28,9 @@ from mindspore import Parameter, Tensor, mint, nn, ops
 from mindspore.common.initializer import Constant, HeUniform, Uniform, XavierUniform, initializer
 
 from ...activations import ACT2FN
-from ...cache_utils import Cache, DynamicCache, SlidingWindowCache, StaticCache
+from ...cache_utils import Cache, DynamicCache, StaticCache
 from ...integrations.flash_attention import flash_attention_forward
+from ...masking_utils import create_causal_mask
 from ...mindspore_adapter import dtype_to_min, scaled_dot_product_attention
 from ...mindspore_adapter._conv import ConvTranspose1d
 from ...modeling_attn_mask_utils import AttentionMaskConverter
@@ -76,6 +77,93 @@ class MimiOutput(ModelOutput):
     decoder_past_key_values: Optional[Union[Cache, List[Tensor]]] = None
 
 
+class MimiConv1dPaddingCache:
+    """
+    Padding cache for MimiConv1d causal convolutions in order to support streaming via cache padding.
+    See: https://arxiv.org/pdf/2005.06720 & https://arxiv.org/pdf/2204.07064
+
+    A padding cache is a list of cached partial hidden states for each convolution layer.
+    Hidden states are cached from the previous call to the MimiConv1d forward pass, given the padding size.
+    """
+
+    def __init__(
+        self,
+        num_layers: int,
+        per_layer_padding: list[int],
+        per_layer_padding_mode: list[str],
+        per_layer_in_channels: list[int],
+    ):
+        # ensure correct number of layers for each arg
+        from_args_num_layers = {len(per_layer_padding), len(per_layer_padding_mode), len(per_layer_in_channels)}
+
+        if len(from_args_num_layers) != 1 or from_args_num_layers.pop() != num_layers:
+            raise ValueError(
+                f"Expected `num_layers` ({num_layers}) values in `per_layer_padding`, `per_layer_padding_mode` and `per_layer_in_channels`"
+            )
+        elif not all(mode in ["constant", "replicate"] for mode in per_layer_padding_mode):
+            raise NotImplementedError(
+                "`padding_cache` is not supported for convolutions using other than `constant` or `replicate` padding mode"
+            )
+
+        self.per_layer_padding = per_layer_padding
+        self.per_layer_padding_mode = per_layer_padding_mode
+        self.per_layer_in_channels = per_layer_in_channels
+        self.per_layer_is_init = [True] * num_layers
+
+        self.padding_cache = [None] * num_layers
+
+    def update(self, hidden_states: Tensor, layer_idx: int):
+        """
+        Updates the padding cache with the new padding states for the layer `layer_idx` and returns the current cache.
+
+        Parameters:
+            hidden_states (`ms.Tensor`):
+                The hidden states to be partially cached.
+            layer_idx (`int`):
+                The index of the layer to cache the states for.
+        Returns:
+            `torch.Tensor` or `None`, the current padding cache.
+        """
+        batch_size, dtype = hidden_states.shape[0], hidden_states.dtype
+        padding = self.per_layer_padding[layer_idx]
+        padding_mode = self.per_layer_padding_mode[layer_idx]
+        in_channels = self.per_layer_in_channels[layer_idx]
+
+        if self.padding_cache[layer_idx] is None:
+            if padding_mode == "constant":
+                current_cache = mint.zeros(
+                    (
+                        batch_size,
+                        in_channels,
+                        padding,
+                    ),
+                    dtype=dtype,
+                )
+            elif padding_mode == "replicate":
+                current_cache = (
+                    mint.ones(
+                        (
+                            batch_size,
+                            in_channels,
+                            padding,
+                        ),
+                        dtype=dtype,
+                    )
+                    * hidden_states[..., :1]
+                )
+        else:
+            current_cache = self.padding_cache[layer_idx]
+
+        # update the cache
+        if padding > 0:
+            padding_states = hidden_states[:, :, -padding:]
+        else:
+            padding_states = mint.empty((batch_size, in_channels, padding), dtype=dtype)
+        self.padding_cache[layer_idx] = padding_states
+
+        return current_cache
+
+
 @dataclass
 class MimiEncoderOutput(ModelOutput):
     """
@@ -96,6 +184,7 @@ class MimiEncoderOutput(ModelOutput):
 
     audio_codes: Tensor = None
     encoder_past_key_values: Optional[Union[Cache, List[Tensor]]] = None
+    padding_cache: Optional[MimiConv1dPaddingCache] = None
 
 
 @dataclass
@@ -132,12 +221,15 @@ class MimiConv1d(nn.Cell):
         stride: int = 1,
         dilation: int = 1,
         groups: int = 1,
-        pad_mode=None,
+        pad_mode: Optional[str] = None,
         bias: bool = True,
+        layer_idx: Optional[int] = None,
     ):
         super().__init__()
         self.causal = config.use_causal_conv
         self.pad_mode = config.pad_mode if pad_mode is None else pad_mode
+        self.layer_idx = layer_idx
+        self.in_channels = in_channels
 
         # warn user on unusual setup between dilation and stride
         if stride > 1 and dilation > 1:
@@ -238,10 +330,17 @@ class MimiConv1d(nn.Cell):
         ) // self.conv.stride[0] + 1
         return output_lenght
 
-    def construct(self, hidden_states):
+    def construct(self, hidden_states, padding_cache=None):
         extra_padding = self._get_extra_padding_for_conv1d(hidden_states)
 
-        if self.causal:
+        if not self.causal and padding_cache is not None:
+            raise ValueError("`padding_cache` is not supported for non-causal convolutions.")
+
+        if self.causal and padding_cache is not None:
+            layer_padding_cache = padding_cache.update(hidden_states, self.layer_idx)
+            hidden_states = mint.cat([layer_padding_cache, hidden_states], dim=2)
+
+        elif self.causal:
             # Left padding for causal
             hidden_states = self._pad1d(hidden_states, (self.padding_total, extra_padding), mode=self.pad_mode)
         else:
@@ -311,7 +410,6 @@ class MimiConvTranspose1d(nn.Cell):
         return hidden_states
 
 
-# Copied from transformers.models.encodec.modeling_encodec.EncodecResnetBlock with Encodec->Mimi,EnCodec->Mimi
 class MimiResnetBlock(nn.Cell):
     """
     Residual block from SEANet model as used by Mimi.
@@ -337,12 +435,21 @@ class MimiResnetBlock(nn.Cell):
         else:
             self.shortcut = mint.nn.Identity()
 
-    def construct(self, hidden_states):
+    def construct(self, hidden_states, padding_cache=None):
         residual = hidden_states
-        for layer in self.block:
-            hidden_states = layer(hidden_states)
 
-        return self.shortcut(residual) + hidden_states
+        for layer in self.block:
+            if isinstance(layer, MimiConv1d):
+                hidden_states = layer(hidden_states, padding_cache=padding_cache)
+            else:
+                hidden_states = layer(hidden_states)
+
+        if isinstance(self.shortcut, MimiConv1d):
+            residual = self.shortcut(residual, padding_cache=padding_cache)
+        else:
+            residual = self.shortcut(residual)
+
+        return residual + hidden_states
 
 
 class MimiEncoder(nn.Cell):
@@ -376,10 +483,17 @@ class MimiEncoder(nn.Cell):
         self.layers = nn.CellList(model)
         self._mimiconv1d_layer_names = mimiconv1d_layer_names
 
-    # Copied from transformers.models.encodec.modeling_encodec.EncodecEncoder.forward
-    def construct(self, hidden_states):
+        # initialize layer_idx for MimiConv1d submodules, necessary for padding_cache
+        for layer_idx, layername in enumerate(self._mimiconv1d_layer_names):
+            conv_layer = self.get_sub_cell(layername)
+            setattr(conv_layer, "layer_idx", layer_idx)
+
+    def construct(self, hidden_states, padding_cache=None):
         for layer in self.layers:
-            hidden_states = layer(hidden_states)
+            if isinstance(layer, (MimiConv1d, MimiResnetBlock)):
+                hidden_states = layer(hidden_states, padding_cache=padding_cache)
+            else:
+                hidden_states = layer(hidden_states)
         return hidden_states
 
 
@@ -1008,16 +1122,21 @@ class MimiTransformerModel(nn.Cell):
 
         if cache_position is None:
             past_seen_tokens = past_key_values.get_seq_length() if past_key_values is not None else 0
+            if isinstance(past_seen_tokens, Tensor):
+                past_seen_tokens = past_seen_tokens.tolist()
             cache_position = mint.arange(past_seen_tokens, past_seen_tokens + hidden_states.shape[1])
 
         if position_ids is None:
             position_ids = cache_position.unsqueeze(0)
 
-        causal_mask = None
-        if attention_mask is not None:
-            causal_mask = self._update_causal_mask(
-                attention_mask, hidden_states, cache_position, past_key_values, output_attentions
-            )
+        causal_mask = create_causal_mask(
+            config=self.config,
+            input_embeds=hidden_states,
+            attention_mask=attention_mask,
+            cache_position=cache_position,
+            past_key_values=past_key_values,
+            position_ids=position_ids,
+        )
 
         # decoder layers
         all_hidden_states = () if output_hidden_states else None
@@ -1073,147 +1192,6 @@ class MimiTransformerModel(nn.Cell):
             hidden_states=all_hidden_states,
             attentions=all_self_attns,
         )
-
-    # Copied from transformers.models.phi3.modeling_phi3.Phi3Model._update_causal_mask with Phi3->Mimi
-    def _update_causal_mask(
-        self,
-        attention_mask: Tensor,
-        input_tensor: Tensor,
-        cache_position: Tensor,
-        past_key_values: Cache,
-        output_attentions: bool = False,
-    ):
-        if self.config._attn_implementation == "flash_attention_2":
-            if attention_mask is not None and past_key_values is not None:
-                is_padding_right = attention_mask[:, -1].sum().item() != input_tensor.shape[0]
-                if is_padding_right:
-                    raise ValueError(
-                        "You are attempting to perform batched generation with padding_side='right'"
-                        " this may lead to unexpected behaviour for Flash Attention version of Mimi. Make sure to "
-                        " call `tokenizer.padding_side  = 'left'` before tokenizing the input. "
-                    )
-            if attention_mask is not None and 0.0 in attention_mask:
-                return attention_mask
-            return None
-
-        # For SDPA, when possible, we will rely on its `is_causal` argument instead of its `attn_mask` argument, in
-        # order to dispatch on Flash Attention 2. This feature is not compatible with static cache, as SDPA will fail
-        # to infer the attention mask.
-        past_seen_tokens = past_key_values.get_seq_length() if past_key_values is not None else 0
-        using_static_cache = isinstance(past_key_values, StaticCache)
-        using_sliding_window_cache = isinstance(past_key_values, SlidingWindowCache)
-
-        # When output attentions is True, sdpa implementation's forward method calls the eager implementation's forward
-        if (
-            self.config._attn_implementation == "sdpa"
-            and not (using_static_cache or using_sliding_window_cache)
-            and not output_attentions
-        ):
-            if AttentionMaskConverter._ignore_causal_mask_sdpa(
-                attention_mask,
-                inputs_embeds=input_tensor,
-                past_key_values_length=past_seen_tokens,
-                sliding_window=self.config.sliding_window,
-                is_training=self.training,
-            ):
-                return None
-
-        dtype = input_tensor.dtype
-        min_dtype = dtype_to_min(dtype)
-        sequence_length = input_tensor.shape[1]
-        # SlidingWindowCache or StaticCache
-        if using_sliding_window_cache or using_static_cache:
-            target_length = past_key_values.get_max_cache_shape()
-        # DynamicCache or no cache
-        else:
-            target_length = (
-                attention_mask.shape[-1]
-                if isinstance(attention_mask, Tensor)
-                else past_seen_tokens + sequence_length + 1
-            )
-
-        # In case the provided `attention` mask is 2D, we generate a causal mask here (4D).
-        causal_mask = self._prepare_4d_causal_attention_mask_with_cache_position(
-            attention_mask,
-            sequence_length=sequence_length,
-            target_length=target_length,
-            dtype=dtype,
-            cache_position=cache_position,
-            batch_size=input_tensor.shape[0],
-            config=self.config,
-            past_key_values=past_key_values,
-        )
-
-        if self.config._attn_implementation == "sdpa" and attention_mask is not None and not output_attentions:
-            # Attend to all tokens in fully masked rows in the causal_mask, for example the relevant first rows when
-            # using left padding. This is required by F.scaled_dot_product_attention memory-efficient attention path.
-            causal_mask = AttentionMaskConverter._unmask_unattended(causal_mask, min_dtype)
-
-        return causal_mask
-
-    @staticmethod
-    # Copied from transformers.models.mistral.modeling_mistral.MistralModel._prepare_4d_causal_attention_mask_with_cache_position with Mistral->Mimi
-    def _prepare_4d_causal_attention_mask_with_cache_position(
-        attention_mask: Tensor,
-        sequence_length: int,
-        target_length: int,
-        dtype: mindspore.dtype,
-        cache_position: Tensor,
-        batch_size: int,
-        config: MimiConfig,
-        past_key_values: Cache,
-    ):
-        """
-        Creates a causal 4D mask of shape `(batch_size, 1, query_length, key_value_length)` from a 2D mask of shape
-        `(batch_size, key_value_length)`, or if the input `attention_mask` is already 4D, do nothing.
-
-        Args:
-            attention_mask (`ms.Tensor`):
-                A 2D attention mask of shape `(batch_size, key_value_length)` or a 4D attention mask of shape `(batch_size, 1, query_length, key_value_length)`.
-            sequence_length (`int`):
-                The sequence length being processed.
-            target_length (`int`):
-                The target length: when generating with static cache, the mask should be as long as the static cache, to account for the 0 padding,
-                the part of the cache that is not filled yet.
-            dtype (`ms.dtype`):
-                The dtype to use for the 4D attention mask.
-            cache_position (`ms.Tensor`):
-                Indices depicting the position of the input sequence tokens in the sequence.
-            batch_size (`ms.Tensor`):
-                Batch size.
-            config (`MimiConfig`):
-                The model's configuration class
-            past_key_values (`Cache`):
-                The cache class that is being used currently to generate
-        """
-        if attention_mask is not None and attention_mask.dim() == 4:
-            # In this case we assume that the mask comes already in inverted form and requires no inversion or slicing.
-            causal_mask = attention_mask
-        else:
-            min_dtype = dtype_to_min(dtype)
-            causal_mask = ops.full((sequence_length, target_length), fill_value=min_dtype, dtype=dtype)
-            diagonal_attend_mask = mint.arange(target_length) > cache_position.reshape(-1, 1)
-            if config.sliding_window is not None:
-                # if we have sliding window, we should not attend to tokens beyond sliding window length, so we mask them out also
-                # the check is needed to verify is current checkpoint was trained with sliding window or not
-                if not isinstance(past_key_values, SlidingWindowCache) or sequence_length > target_length:
-                    sliding_attend_mask = mint.arange(target_length) <= (
-                        cache_position.reshape(-1, 1) - config.sliding_window
-                    )
-                    diagonal_attend_mask.bitwise_or_(sliding_attend_mask)
-            causal_mask *= diagonal_attend_mask
-            causal_mask = causal_mask[None, None, :, :].expand((batch_size, 1, -1, -1))
-            if attention_mask is not None:
-                causal_mask = causal_mask.clone()  # copy to contiguous memory for in-place edit
-                if attention_mask.shape[-1] > target_length:
-                    attention_mask = attention_mask[:, :target_length]
-                mask_length = attention_mask.shape[-1]
-                padding_mask = causal_mask[:, :, :, :mask_length] + attention_mask[:, None, None, :]
-                padding_mask = padding_mask == 0
-                causal_mask[:, :, :, :mask_length] = causal_mask[:, :, :, :mask_length].masked_fill(
-                    padding_mask, min_dtype
-                )
-        return causal_mask
 
 
 class MimiDecoder(nn.Cell):
@@ -1276,7 +1254,7 @@ class MimiEuclideanCodebook(nn.Cell):
     def quantize(self, hidden_states):
         # Projects each vector in `hidden_states` over the nearest centroid and return its index.
         # `hidden_states` should be `[N, D]` with `N` the number of input vectors and `D` the dimension.
-        dists = mint.cdist(hidden_states[None], self.embed[None], p=2.0)[0]
+        dists = mint.cdist(hidden_states[None].float(), self.embed[None].float(), p=2.0)[0]
         embed_ind = dists.argmin(dim=-1)
         return embed_ind
 
@@ -1493,6 +1471,7 @@ class MimiModel(MimiPreTrainedModel):
                 stride=2,
                 bias=False,
                 pad_mode="replicate",
+                layer_idx=len(self.encoder._mimiconv1d_layer_names),
             )
 
             self.upsample = MimiConvTranspose1d(
@@ -1529,12 +1508,16 @@ class MimiModel(MimiPreTrainedModel):
         num_quantizers: int,
         padding_mask: int,
         past_key_values: Optional[Union[Cache, List[Tensor]]] = None,
+        padding_cache: Optional[MimiConv1dPaddingCache] = None,
         return_dict: Optional[bool] = None,
     ) -> Tuple[Tensor, Optional[Tensor]]:
         """
         Encodes the given input using the underlying VQVAE. The padding mask is required to compute the correct scale.
         """
-        embeddings = self.encoder(input_values)
+        # TODO: @eustlb, let's make the encoder support padding_mask so that batched inputs are supported.
+        embeddings = self.encoder(input_values, padding_cache=padding_cache)
+
+        # TODO: @eustlb, convert the padding mask to attention mask.
         encoder_outputs = self.encoder_transformer(
             embeddings.transpose(1, 2), past_key_values=past_key_values, return_dict=return_dict
         )
@@ -1543,11 +1526,11 @@ class MimiModel(MimiPreTrainedModel):
         elif len(encoder_outputs) > 1:
             past_key_values = encoder_outputs[1]
         embeddings = encoder_outputs[0].transpose(1, 2)
-        embeddings = self.downsample(embeddings)
+        embeddings = self.downsample(embeddings, padding_cache=padding_cache)
 
         codes = self.quantizer.encode(embeddings, num_quantizers)
         codes = codes.transpose(0, 1)
-        return codes, past_key_values
+        return codes, past_key_values, padding_cache
 
     def get_encoded_length(self, input_length: Tensor) -> Tensor:
         """
@@ -1584,6 +1567,8 @@ class MimiModel(MimiPreTrainedModel):
         padding_mask: Tensor = None,
         num_quantizers: Optional[float] = None,
         encoder_past_key_values: Optional[Union[Cache, List[Tensor]]] = None,
+        padding_cache: Optional[MimiConv1dPaddingCache] = None,
+        use_streaming: Optional[bool] = None,
         return_dict: Optional[bool] = None,
     ) -> Union[Tuple[Tensor, Optional[Tensor]], MimiEncoderOutput]:
         """
@@ -1614,6 +1599,7 @@ class MimiModel(MimiPreTrainedModel):
             `codebook` of shape `[batch_size, num_codebooks, frames]`, the discrete encoded codes for the input audio waveform.
         """
         return_dict = return_dict if return_dict is not None else self.config.return_dict
+        use_streaming = use_streaming if use_streaming is not None else self.config.use_streaming
 
         num_quantizers = self.config.num_quantizers if num_quantizers is None else num_quantizers
 
@@ -1631,11 +1617,31 @@ class MimiModel(MimiPreTrainedModel):
         if padding_mask is None:
             padding_mask = mint.ones_like(input_values).bool()
 
-        encoded_frames, encoder_past_key_values = self._encode_frame(
+        if use_streaming and padding_cache is None:
+            per_layer_padding, per_layer_padding_mode, per_layer_in_channels = [], [], []
+            for layer_name in self.encoder._mimiconv1d_layer_names:
+                per_layer_padding.append(self.encoder.get_sub_cell(layer_name).padding_total)
+                per_layer_padding_mode.append(self.encoder.get_sub_cell(layer_name).pad_mode)
+                per_layer_in_channels.append(self.encoder.get_sub_cell(layer_name).in_channels)
+
+            # downsample layer
+            per_layer_padding.append(self.downsample.padding_total)
+            per_layer_padding_mode.append(self.downsample.pad_mode)
+            per_layer_in_channels.append(self.downsample.in_channels)
+
+            padding_cache = MimiConv1dPaddingCache(
+                num_layers=len(self.encoder._mimiconv1d_layer_names) + 1,
+                per_layer_padding=per_layer_padding,
+                per_layer_padding_mode=per_layer_padding_mode,
+                per_layer_in_channels=per_layer_in_channels,
+            )
+
+        encoded_frames, encoder_past_key_values, padding_cache = self._encode_frame(
             input_values,
             num_quantizers,
             padding_mask.bool(),
             past_key_values=encoder_past_key_values,
+            padding_cache=padding_cache,
             return_dict=return_dict,
         )
 
@@ -1643,9 +1649,10 @@ class MimiModel(MimiPreTrainedModel):
             return (
                 encoded_frames,
                 encoder_past_key_values,
+                padding_cache,
             )
 
-        return MimiEncoderOutput(encoded_frames, encoder_past_key_values)
+        return MimiEncoderOutput(encoded_frames, encoder_past_key_values, padding_cache)
 
     def _decode_frame(
         self,
