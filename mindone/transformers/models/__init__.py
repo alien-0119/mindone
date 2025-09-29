@@ -37,6 +37,7 @@ from . import (
     convnext,
     convnextv2,
     depth_anything,
+    dia,
     dinov2,
     dpt,
     fuyu,
