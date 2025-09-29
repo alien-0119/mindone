@@ -291,6 +291,7 @@ from .models.csm import (
     CsmForConditionalGeneration,
     CsmPreTrainedModel,
 )
+from .models.dac import DacModel, DacPreTrainedModel
 from .models.deberta import (
     DebertaForMaskedLM,
     DebertaForQuestionAnswering,
@@ -309,6 +310,7 @@ from .models.deberta_v2 import (
     DebertaV2PreTrainedModel,
 )
 from .models.depth_anything import DepthAnythingForDepthEstimation, DepthAnythingPreTrainedModel
+from .models.dia import DiaForConditionalGeneration, DiaModel, DiaPreTrainedModel, DiaProcessor
 from .models.dinov2 import Dinov2Backbone, Dinov2ForImageClassification, Dinov2Model, Dinov2PreTrainedModel
 from .models.dpt import DPTForDepthEstimation, DPTImageProcessor, DPTModel, DPTPreTrainedModel
 from .models.fuyu import FuyuForCausalLM, FuyuPreTrainedModel
