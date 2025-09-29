@@ -43,6 +43,7 @@ MODEL_MAPPING_NAMES = OrderedDict(
         ("bit", "BitModel"),
         ("blip", "BlipModel"),
         ("blip-2", "Blip2Model"),
+        ("blip_2_qformer", "Blip2QFormerModel"),
         ("starcoder2", "Starcoder2Model"),
         ("canine", "CanineModel"),
         ("chameleon", "ChameleonModel"),
@@ -409,6 +410,7 @@ MODEL_FOR_SEQ_TO_SEQ_CAUSAL_LM_MAPPING_NAMES = OrderedDict(
         # Model for Seq2Seq Causal LM mapping
         ("bart", "BartForConditionalGeneration"),
         ("led", "LEDForConditionalGeneration"),
+        ("granite_speech", "GraniteSpeechForConditionalGeneration"),
         ("m2m_100", "M2M100ForConditionalGeneration"),
         ("mvp", "MvpForConditionalGeneration"),
         ("mt5", "MT5ForConditionalGeneration"),
@@ -420,6 +422,7 @@ MODEL_FOR_SEQ_TO_SEQ_CAUSAL_LM_MAPPING_NAMES = OrderedDict(
 
 MODEL_FOR_SPEECH_SEQ_2_SEQ_MAPPING_NAMES = OrderedDict(
     [
+        ("granite_speech", "GraniteSpeechForConditionalGeneration"),
         ("speecht5", "SpeechT5ForSpeechToText"),
         ("whisper", "WhisperForConditionalGeneration"),
     ]

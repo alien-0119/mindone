@@ -43,6 +43,7 @@ CONFIG_MAPPING_NAMES = OrderedDict(
         ("bit", "BitConfig"),
         ("blip", "BlipConfig"),
         ("blip-2", "Blip2Config"),
+        ("blip_2_qformer", "Blip2QFormerConfig"),
         ("chameleon", "ChameleonConfig"),
         ("camembert", "CamembertConfig"),
         ("convbert", "ConvBertConfig"),
@@ -64,6 +65,7 @@ CONFIG_MAPPING_NAMES = OrderedDict(
         ("glm", "GlmConfig"),
         ("glpn", "GLPNConfig"),
         ("gpt2", "GPT2Config"),
+        ("granite_speech", "GraniteSpeechConfig"),
         ("granitemoe", "GraniteMoeConfig"),
         ("granitemoeshared", "GraniteMoeSharedConfig"),
         ("helium", "HeliumConfig"),
@@ -139,6 +141,7 @@ MODEL_NAMES_MAPPING = OrderedDict(
         ("blip", "BLIP"),
         ("mvp", "MVP"),
         ("blip-2", "BLIP-2"),
+        ("blip_2_qformer", "BLIP-2 QFormer"),
         ("chameleon", "Chameleon"),
         ("clap", "CLAP"),
         ("canine", "CANINE"),
@@ -162,6 +165,7 @@ MODEL_NAMES_MAPPING = OrderedDict(
         ("qwen2_audio", "Qwen2Audio"),
         ("qwen2_audio_encoder", "Qwen2AudioEncoder"),
         ("roberta", "RoBERTa"),
+        ("granite_speech", "GraniteSpeech"),
         ("granitemoe", "GraniteMoeMoe"),
         ("granitemoeshared", "GraniteMoeSharedMoe"),
         ("gemma3", "Gemma3ForConditionalGeneration"),
@@ -275,6 +279,7 @@ SPECIAL_MODEL_TYPE_TO_MODULE_NAME = OrderedDict(
         ("smolvlm_vision", "smolvlm"),
         ("chinese_clip_vision_model", "chinese_clip"),
         ("rt_detr_resnet", "rt_detr"),
+        ("blip_2_qformer", "blip_2"),
     ]
 )
 

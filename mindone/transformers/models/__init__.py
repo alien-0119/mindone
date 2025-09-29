@@ -49,6 +49,7 @@ from . import (
     granite,
     granitemoe,
     granitemoeshared,
+    granite_speech,
     hiera,
     hubert,
     idefics,
