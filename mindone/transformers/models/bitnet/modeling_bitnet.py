@@ -126,7 +126,7 @@ def repeat_kv(hidden_states: Tensor, n_rep: int) -> Tensor:
 
 
 def eager_attention_forward(
-    module: nn.Module,
+    module: nn.Cell,
     query: Tensor,
     key: Tensor,
     value: Tensor,
@@ -449,7 +449,7 @@ class BitNetForCausalLM(BitNetPreTrainedModel, GenerationMixin):
         >>> inputs = {k: ms.tensor(v) for k, v in inputs.items()}
 
         >>> # Generate
-        >>> generate_ids = model.generate(inputs.input_ids, max_length=100)
+        >>> generate_ids = model.generate(inputs['input_ids'], max_length=100)
         >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
         "User: Hey, are you conscious? Can you talk to me?Assistant: No, I'm not conscious. I'm an artificial intelligence designed to assist with information and tasks. How can I help you today?"
         ```"""
