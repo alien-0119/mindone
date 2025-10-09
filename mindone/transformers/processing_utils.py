@@ -1354,7 +1354,7 @@ class ProcessorMixin(PushToHubMixin):
 
     @staticmethod
     def get_possibly_dynamic_module(module_name):
-        if "ImageProcess" in module_name or "Model" in module_name:
+        if "ImageProcess" in module_name:
             sub_path = os.path.abspath(os.path.dirname(__file__))
             sub_path = str(Path(sub_path).parent)
             sys.path.insert(0, sub_path)
