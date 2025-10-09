@@ -41,6 +41,7 @@ MODEL_MAPPING_NAMES = OrderedDict(
         ("mvp", "MvpModel"),
         ("convbert", "ConvBertModel"),
         ("bit", "BitModel"),
+        ("bitnet", "BitNetModel"),
         ("blip", "BlipModel"),
         ("blip-2", "Blip2Model"),
         ("starcoder2", "Starcoder2Model"),
@@ -182,6 +183,7 @@ MODEL_FOR_CAUSAL_LM_MAPPING_NAMES = OrderedDict(
         # Model for Causal LM mapping
         ("aria_text", "AriaTextForCausalLM"),
         ("bart", "BartForCausalLM"),
+        ("bitnet", "BitNetForCausalLM"),
         ("camembert", "CamembertForCausalLM"),
         ("mvp", "MvpForCausalLM"),
         ("opt", "OPTForCausalLM"),

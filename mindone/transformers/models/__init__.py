@@ -26,6 +26,7 @@ from . import (
     big_bird,
     bigbird_pegasus,
     bit,
+    bitnet,
     blip,
     blip_2,
     camembert,

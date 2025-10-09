@@ -196,6 +196,7 @@ from .models.bigbird_pegasus import (
     BigBirdPegasusPreTrainedModel,
 )
 from .models.bit import BitBackbone
+from .models.bitnet import BitNetForCausalLM, BitNetModel, BitNetPreTrainedModel
 from .models.blip import (
     BlipForConditionalGeneration,
     BlipForImageTextRetrieval,
