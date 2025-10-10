@@ -49,6 +49,7 @@ from . import (
     granite,
     granitemoe,
     granitemoeshared,
+    hgnet_v2,
     hiera,
     hubert,
     idefics,
