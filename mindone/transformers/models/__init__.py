@@ -44,6 +44,7 @@ from . import (
     gemma2,
     gemma3,
     glm,
+    glm4,
     glpn,
     gpt2,
     granite,
