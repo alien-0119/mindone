@@ -89,6 +89,7 @@ CONFIG_MAPPING_NAMES = OrderedDict(
         ("llava_onevision", "LlavaOnevisionConfig"),
         ("mistral", "MistralConfig"),
         ("mobilebert", "MobileBertConfig"),
+        ("mobilebert-decoder", "MobileBertDecoderConfig"),
         ("mpt", "MptConfig"),
         ("nystromformer", "NystromformerConfig"),
         ("starcoder2", "Starcoder2Config"),
@@ -195,16 +196,13 @@ MODEL_NAMES_MAPPING = OrderedDict(
         ("persimmon", "Persimmon"),
         ("fuyu", "Fuyu"),
         ("mobilebert", "MobileBERT"),
+        ("mobilebert-decoder", "MobileBERTDecoder"),
         ("mpt", "MPT"),
         ("mt5", "MT5"),
         ("megatron-bert", "Megatron-BERT"),
         ("mistral", "Mistral"),
         ("mixtral", "Mixtral"),
-<<<<<<< HEAD
-=======
-        ("nystromformer", "Nyströmformer"),
-        ("owlvit", "OWL-ViT"),
->>>>>>> 9c8a2966 (feat(transformers): add bamba, modernbert, rwkv, nystromformer and Zamba model (#1241))
+        ("nystromformer", "Nystromformer"),
         ("paligemma", "PaliGemma"),
         ("phi", "Phi"),
         ("phi3", "Phi3"),

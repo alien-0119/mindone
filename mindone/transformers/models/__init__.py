@@ -70,6 +70,7 @@ from . import (
     mixtral,
     mobilebert,
     modernbert,
+    modernbert_decoder,
     mpt,
     mvp,
     nystromformer,
@@ -97,11 +98,6 @@ from . import (
     vits,
     wav2vec2,
     xlm_roberta,
-<<<<<<< HEAD
-=======
-    yolos,
-    zamba,
->>>>>>> 9c8a2966 (feat(transformers): add bamba, modernbert, rwkv, nystromformer and Zamba model (#1241))
 )
 
 if version.parse(transformers.__version__) >= version.parse("4.51.0"):

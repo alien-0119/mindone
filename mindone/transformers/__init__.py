@@ -469,6 +469,12 @@ from .models.modernbert import (
     ModernBertModel,
     ModernBertPreTrainedModel,
 )
+from .models.modernbert_decoder import (
+    ModernBertDecoderForCausalLM,
+    ModernBertDecoderForSequenceClassification,
+    ModernBertDecoderModel,
+    ModernBertDecoderPreTrainedModel,
+)
 from .models.mpt import (
     MptForCausalLM,
     MptForQuestionAnswering,
@@ -672,19 +678,7 @@ from .models.xlm_roberta_xl import (
     XLMRobertaXLModel,
     XLMRobertaXLPreTrainedModel,
 )
-<<<<<<< HEAD
 from .pipelines import TextGenerationPipeline, pipeline
-=======
-from .models.yolos import YolosForObjectDetection, YolosImageProcessor, YolosModel, YolosPreTrainedModel
-from .models.zamba import ZambaForCausalLM, ZambaForSequenceClassification, ZambaModel, ZambaPreTrainedModel
-from .pipelines import (
-    ImageToImagePipeline,
-    ImageToTextPipeline,
-    TextGenerationPipeline,
-    VisualQuestionAnsweringPipeline,
-    pipeline,
-)
->>>>>>> 9c8a2966 (feat(transformers): add bamba, modernbert, rwkv, nystromformer and Zamba model (#1241))
 from .processing_utils import ProcessorMixin
 
 if version.parse(transformers.__version__) >= version.parse("4.51.0"):

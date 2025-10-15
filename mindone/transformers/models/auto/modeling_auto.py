@@ -89,15 +89,11 @@ MODEL_MAPPING_NAMES = OrderedDict(
         ("llama", "LlamaModel"),
         ("mistral", "MistralModel"),
         ("mobilebert", "MobileBertModel"),
+        ("mobilebert-decoder", "MobileBertDecoderModel"),
         ("mpt", "MptModel"),
         ("mt5", "MT5Model"),
         ("megatron-bert", "MegatronBertModel"),
         ("mixtral", "MixtralModel"),
-<<<<<<< HEAD
-=======
-        ("nystromformer", "NystromformerModel"),
-        ("owlvit", "OwlViTModel"),
->>>>>>> 9c8a2966 (feat(transformers): add bamba, modernbert, rwkv, nystromformer and Zamba model (#1241))
         ("phi", "PhiModel"),
         ("phi3", "Phi3Model"),
         ("qwen2", "Qwen2Model"),
@@ -214,6 +210,7 @@ MODEL_FOR_CAUSAL_LM_MAPPING_NAMES = OrderedDict(
         ("llama", "LlamaForCausalLM"),
         ("megatron-bert", "MegatronBertForCausalLM"),
         ("mistral", "MistralForCausalLM"),
+        ("mobilebert-decoder", "ModernBertDecoderForCausalLM"),
         ("mpt", "MptForCausalLM"),
         ("phi", "PhiForCausalLM"),
         ("phi3", "Phi3ForCausalLM"),
@@ -463,6 +460,7 @@ MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING_NAMES = OrderedDict(
         ("llama", "LlamaForSequenceClassification"),
         ("persimmon", "PersimmonForSequenceClassification"),
         ("mobilebert", "MobileBertForSequenceClassification"),
+        ("mobilebert-decoder", "ModernBertDecoderForSequenceClassification"),
         ("convbert", "ConvBertForSequenceClassification"),
         ("mt5", "MT5ForSequenceClassification"),
         ("megatron-bert", "MegatronBertForSequenceClassification"),
@@ -500,11 +498,6 @@ MODEL_FOR_QUESTION_ANSWERING_MAPPING_NAMES = OrderedDict(
         ("mobilebert", "MobileBertForQuestionAnswering"),
         ("megatron-bert", "MegatronBertForQuestionAnswering"),
         ("mistral", "MistralForQuestionAnswering"),
-<<<<<<< HEAD
-=======
-        ("nystromformer", "NystromformerForQuestionAnswering"),
-        ("opt", "OPTForQuestionAnswering"),
->>>>>>> 9c8a2966 (feat(transformers): add bamba, modernbert, rwkv, nystromformer and Zamba model (#1241))
         ("qwen2", "Qwen2ForQuestionAnswering"),
         ("rembert", "RemBertForQuestionAnswering"),
         ("t5", "T5ForQuestionAnswering"),
