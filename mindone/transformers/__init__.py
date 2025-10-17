@@ -1335,6 +1335,14 @@ from .models.timesformer import TimesformerForVideoClassification, TimesformerMo
 from .models.trocr import TrOCRForCausalLM, TrOCRPreTrainedModel
 from .models.tvp import TvpForVideoGrounding, TvpModel, TvpPreTrainedModel
 from .models.udop import UdopEncoderModel, UdopForConditionalGeneration, UdopModel, UdopPreTrainedModel
+from .models.t5gemma import (
+    T5GemmaEncoderModel,
+    T5GemmaForConditionalGeneration,
+    T5GemmaPreTrainedModel,
+    T5GemmaForSequenceClassification,
+    T5GemmaForTokenClassification,
+    T5GemmaModel,
+)
 from .models.umt5 import (
     UMT5EncoderModel,
     UMT5ForQuestionAnswering,
