@@ -88,6 +88,7 @@ from . import (
     starcoder2,
     switch_transformers,
     t5,
+    t5gemma,
     umt5,
     vit,
     vits,
