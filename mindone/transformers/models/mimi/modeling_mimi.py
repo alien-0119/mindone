@@ -30,7 +30,8 @@ from mindspore.common.initializer import Constant, HeUniform, Uniform, XavierUni
 from ...activations import ACT2FN
 from ...cache_utils import Cache, DynamicCache, SlidingWindowCache, StaticCache
 from ...integrations.flash_attention import flash_attention_forward
-from ...mindspore_adapter import dtype_to_min, scaled_dot_product_attention
+from ...integrations.sdpa_attention import scaled_dot_product_attention
+from ...mindspore_adapter import dtype_to_min
 from ...mindspore_adapter._conv import ConvTranspose1d
 from ...modeling_attn_mask_utils import AttentionMaskConverter
 from ...modeling_outputs import BaseModelOutputWithPast
