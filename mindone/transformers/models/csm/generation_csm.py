@@ -26,10 +26,9 @@ import mindspore
 from mindspore import Tensor, mint
 
 from ...generation import GenerationMixin
-from ...generation.utils import GenerateDecoderOnlyOutput
 from ...generation.logits_process import LogitsProcessorList
 from ...generation.stopping_criteria import MaxLengthCriteria, StoppingCriteriaList
-from ...generation.utils import GenerateNonBeamOutput
+from ...generation.utils import GenerateDecoderOnlyOutput, GenerateNonBeamOutput
 from ...utils import logging
 
 if TYPE_CHECKING:
@@ -120,11 +119,13 @@ class CsmGenerationMixin(GenerationMixin):
 
         if {depth_decoder_min_new_tokens, depth_decoder_max_new_tokens} != {self.config.num_codebooks - 1}:
             raise ValueError(
-                f"depth_decoder_generation_config's min_new_tokens ({depth_decoder_min_new_tokens}) and max_new_tokens ({depth_decoder_max_new_tokens}) must be equal to self.config.num_codebooks - 1 ({self.config.num_codebooks - 1})"
+                f"depth_decoder_generation_config's min_new_tokens ({depth_decoder_min_new_tokens}) "
+                f"and max_new_tokens ({depth_decoder_max_new_tokens}) must be equal to self.config.num_codebooks - 1 ({self.config.num_codebooks - 1})"
             )
         elif self.depth_decoder.generation_config.return_dict_in_generate:
             logger.warning(
-                "depth_decoder_generation_config.return_dict_in_generate is set to True, but this will be ignored as the depth decoder model does not return a dictionary in generate"
+                "depth_decoder_generation_config.return_dict_in_generate is set to True, "
+                "but this will be ignored as the depth decoder model does not return a dictionary in generate"
             )
             self.depth_decoder.generation_config.return_dict_in_generate = False
 

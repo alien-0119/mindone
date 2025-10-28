@@ -68,7 +68,8 @@ class CsmOutputWithPast(ModelOutput):
     depth_decoder_past_key_values (`tuple(tuple(ms.Tensor))`, *optional*, returned when `use_cache=True` is passed or when `config.use_cache=True`):
         Tuple of `tuple(ms.Tensor)` of length `config.n_layers`, with each tuple having 2 tensors of shape
         `(batch_size, num_heads, sequence_length, embed_size_per_head)`)
-    depth_decoder_hidden_states (`tuple(ms.Tensor)`, *optional*, returned when `output_hidden_states=True` is passed or when `config.output_hidden_states=True`):
+    depth_decoder_hidden_states (`tuple(ms.Tensor)`, *optional*, returned when `output_hidden_states=True` is passed or
+        when `config.output_hidden_states=True`):
         Tuple of `ms.Tensor` (one for the output of the embeddings, if the model has an embedding layer, +
         one for the output of each layer) of shape `(batch_size, sequence_length, hidden_size)`.
 
@@ -654,7 +655,8 @@ class CsmBackboneModel(CsmPreTrainedModel):
             1. (batch_size, sequence_length): corresponds to the input sequence prepared with the processor from the text prompt. Such input
             requires `input_values` to be provided so that audio can be encoded in codebook tokens and then merged with the text tokens.
 
-            2. (batch_size, sequence_length, num_codebooks): codebook tokens generated during the autoregressive decoding. Such input is not meant to be used by end users.
+            2. (batch_size, sequence_length, num_codebooks): codebook tokens generated during the autoregressive decoding.
+                Such input is not meant to be used by end users.
 
             Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
             [`PreTrainedTokenizer.__call__`] for details.
@@ -848,7 +850,9 @@ class CsmForConditionalGeneration(CsmGenerationMixin, CsmPreTrainedModel):
                 # labels_expanded[audio_eos_token_mask] = audio_eos_frame_ids
                 audio_eos_token_mask_expanded = audio_eos_token_mask.unsqueeze(-1).expand_as(labels_expanded)
                 audio_eos_frame_ids_expanded = audio_eos_frame_ids.expand_as(labels_expanded)
-                labels_expanded = mint.where(audio_eos_token_mask_expanded, audio_eos_frame_ids_expanded, labels_expanded)
+                labels_expanded = mint.where(
+                    audio_eos_token_mask_expanded, audio_eos_frame_ids_expanded, labels_expanded
+                )
                 # mask depth decoder
                 depth_decoder_ignore_frames_idxs = (labels == -101).nonzero(as_tuple=True)
                 labels_expanded[depth_decoder_ignore_frames_idxs[0], depth_decoder_ignore_frames_idxs[1], 1:] = -100
@@ -907,7 +911,8 @@ class CsmForConditionalGeneration(CsmGenerationMixin, CsmPreTrainedModel):
             1. (batch_size, sequence_length): corresponds to the input sequence prepared with the processor from the text prompt. Such input
             requires `input_values` to be provided so that audio can be encoded in codebook tokens and then merged with the text tokens.
 
-            2. (batch_size, sequence_length, num_codebooks): codebook tokens generated during the autoregressive decoding. Such input is not meant to be used by end users.
+            2. (batch_size, sequence_length, num_codebooks): codebook tokens generated during the autoregressive decoding.
+                Such input is not meant to be used by end users.
 
             Indices can be obtained using [`AutoTokenizer`]. See [`PreTrainedTokenizer.encode`] and
             [`PreTrainedTokenizer.__call__`] for details.
