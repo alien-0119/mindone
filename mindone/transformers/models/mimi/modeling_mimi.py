@@ -24,16 +24,15 @@ from transformers import MimiConfig
 from transformers.utils import ModelOutput, logging
 
 import mindspore
-from mindspore import Parameter, Tensor, mint, nn, ops
-from mindspore.common.initializer import Constant, HeUniform, Uniform, XavierUniform, initializer
+from mindspore import Parameter, Tensor, mint, nn
+from mindspore.common.initializer import HeUniform, Uniform, initializer
 
 from ...activations import ACT2FN
 from ...cache_utils import Cache, DynamicCache, StaticCache
 from ...integrations.flash_attention import flash_attention_forward
+from ...integrations.sdpa_attention import scaled_dot_product_attention
 from ...masking_utils import create_causal_mask
-from ...mindspore_adapter import dtype_to_min, scaled_dot_product_attention
 from ...mindspore_adapter._conv import ConvTranspose1d
-from ...modeling_attn_mask_utils import AttentionMaskConverter
 from ...modeling_outputs import BaseModelOutputWithPast
 from ...modeling_rope_utils import ROPE_INIT_FUNCTIONS
 from ...modeling_utils import PreTrainedModel
