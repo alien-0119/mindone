@@ -1103,6 +1103,8 @@ class MimiTransformerModel(nn.Cell):
         if position_ids is None:
             position_ids = cache_position.unsqueeze(0)
 
+        # FIXME: vmap error
+        """
         causal_mask = create_causal_mask(
             config=self.config,
             input_embeds=hidden_states,
@@ -1111,6 +1113,12 @@ class MimiTransformerModel(nn.Cell):
             past_key_values=past_key_values,
             position_ids=position_ids,
         )
+        """
+        causal_mask = None
+        if attention_mask is not None:
+            causal_mask = self._update_causal_mask(
+                attention_mask, hidden_states, cache_position, past_key_values, output_attentions
+            )
 
         # decoder layers
         all_hidden_states = () if output_hidden_states else None
