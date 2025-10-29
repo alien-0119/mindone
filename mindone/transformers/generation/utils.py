@@ -1951,7 +1951,7 @@ class GenerationMixin:
             cache_position = mint.ones_like(model_kwargs["inputs_embeds"][0, :, 0], dtype=ms.int32).cumsum(0) - 1
         elif "decoder_inputs_embeds" in model_kwargs and self.config.is_encoder_decoder:
             cache_position = (
-                mint.ones(model_kwargs["decoder_inputs_embeds"][0, :, 0], dtype=ms.int32).cumsum(0) - 1
+                mint.ones_like(model_kwargs["decoder_inputs_embeds"][0, :, 0], dtype=ms.int32).cumsum(0) - 1
             )
         else:
             cache_position = mint.ones(seq_length, dtype=ms.int32).cumsum(0) - 1
