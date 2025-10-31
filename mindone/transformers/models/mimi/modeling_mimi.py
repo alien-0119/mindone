@@ -530,7 +530,6 @@ class MimiRotaryEmbedding(nn.Cell):
         self.register_buffer("inv_freq", inv_freq, persistent=False)
         self.original_inv_freq = self.inv_freq
 
-
     @mindspore._no_grad()
     def construct(self, x, position_ids):
         if "dynamic" in self.rope_type:
@@ -1103,8 +1102,6 @@ class MimiTransformerModel(nn.Cell):
         if position_ids is None:
             position_ids = cache_position.unsqueeze(0)
 
-        # FIXME: vmap error
-        """
         causal_mask = create_causal_mask(
             config=self.config,
             input_embeds=hidden_states,
@@ -1113,12 +1110,6 @@ class MimiTransformerModel(nn.Cell):
             past_key_values=past_key_values,
             position_ids=position_ids,
         )
-        """
-        causal_mask = None
-        if attention_mask is not None:
-            causal_mask = self._update_causal_mask(
-                attention_mask, hidden_states, cache_position, past_key_values, output_attentions
-            )
 
         # decoder layers
         all_hidden_states = () if output_hidden_states else None
@@ -1148,7 +1139,9 @@ class MimiTransformerModel(nn.Cell):
             all_hidden_states += (hidden_states,)
 
         if not return_dict:
-            return tuple(v for v in [hidden_states, past_key_values, all_hidden_states, all_self_attns] if v is not None)
+            return tuple(
+                v for v in [hidden_states, past_key_values, all_hidden_states, all_self_attns] if v is not None
+            )
 
         return BaseModelOutputWithPast(
             last_hidden_state=hidden_states,
