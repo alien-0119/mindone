@@ -1040,6 +1040,7 @@ from .models.owlvit import (
     OwlViTVisionModel,
 )
 from .models.paligemma import PaliGemmaForConditionalGeneration, PaliGemmaPreTrainedModel
+from .models.parakeet import ParakeetEncoder, ParakeetForCTC, ParakeetPreTrainedModel
 from .models.pegasus import PegasusForCausalLM, PegasusForConditionalGeneration, PegasusModel, PegasusPreTrainedModel
 from .models.pegasus_x import PegasusXForConditionalGeneration, PegasusXModel, PegasusXPreTrainedModel
 from .models.perceiver import (
