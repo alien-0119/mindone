@@ -27,7 +27,8 @@ from tests.modeling_test_utils import (
 )
 from tests.transformers_tests.models.modeling_common import floats_numpy, random_attention_mask
 
-DTYPE_AND_THRESHOLDS = {"fp32": 5e-4, "fp16": 5e-3, "bf16": 5e-3}
+# In test case of fp16, pt model and inputs will be cast to fp32 that leads diffs of ms and pt outputs larger.
+DTYPE_AND_THRESHOLDS = {"fp32": 5e-4, "fp16": 2e-2, "bf16": 9e-3}
 MODES = [1]
 
 
