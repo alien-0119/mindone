@@ -19,12 +19,13 @@ mindspore  |  ascend driver   |cann  |
 |:--:|:--:|:--:|
 | >=2.6.0    | >=24.1.RC1 |   >=8.1.RC1 |
 
-
-
+```
 git clone https://github.com/mindspore-lab/mindone.git
 cd mindone
 pip install -e .
-cd examples/qwen3
+cd examples/transformers/qwen3
+```
+
 ```
 
 ## Quick Start
@@ -35,13 +36,13 @@ Here is a usage example of inference script:
 import mindspore
 from mindspore import JitConfig
 from transformers import AutoTokenizer
-from mindone.transformers.models.qwen3.modeling_qwen3 import Qwen3ForCausalLM
+from mindone.transformers import AutoModelForCausalLM
 
 mindspore.set_context(mode=mindspore.GRAPH_MODE, jit_syntax_level=mindspore.STRICT)
 
 # load model
 model_name = "Qwen/Qwen3-0.6B"  # or replace the local path here
-model = Qwen3ForCausalLM.from_pretrained(
+model = AutoModelForCausalLM.from_pretrained(
     model_name,
     mindspore_dtype=mindspore.bfloat16,
     attn_implementation="flash_paged",
@@ -55,12 +56,19 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 # info
 print("*" * 100)
 print(f"Using {config._attn_implementation}, use_cache {config.use_cache},"
-      f"dtype {config.mindspore_dtype}, layer {config.num_hidden_layers}")
+      f"dtype {config.dtype}, layer {config.num_hidden_layers}")
 print("Successfully loaded Qwen3ForCausalLM")
 
 # prepare inputs
 prompt = "the secret to baking a really good cake is"
-input_ids = mindspore.tensor(tokenizer([prompt], return_tensors="np").input_ids, mindspore.int32)
+messages = [{"role": "user", "content": prompt}]
+text = tokenizer.apply_chat_template(
+    messages,
+    tokenize=False,
+    add_generation_prompt=True,
+    enable_thinking=True,  # Switches between thinking and non-thinking modes. Default is True.
+)
+input_ids = mindspore.tensor(tokenizer([text], return_tensors="np").input_ids, mindspore.int32)
 model_inputs = {}
 model_inputs["input_ids"] = input_ids
 
@@ -81,7 +89,7 @@ For convienience, you can use the following command:
 
 ```bash
 python generate.py \
-    --model_name "Qwen/Qwen3-0.6B-Base" \
+    --model_name "Qwen/Qwen3-0.6B" \
     --prompt "the secret to baking a really good cake is"
 ```
 

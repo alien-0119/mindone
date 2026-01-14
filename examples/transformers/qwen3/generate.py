@@ -5,12 +5,12 @@ from transformers import AutoTokenizer
 import mindspore as ms
 from mindspore import JitConfig
 
-from mindone.transformers.models.qwen3.modeling_qwen3 import Qwen3ForCausalLM
+from mindone.transformers import AutoModelForCausalLM
 
 
 def generate(args):
     # load model
-    model = Qwen3ForCausalLM.from_pretrained(
+    model = AutoModelForCausalLM.from_pretrained(
         args.model_name,
         mindspore_dtype=ms.bfloat16,
         attn_implementation=args.attn_implementation,
@@ -25,12 +25,19 @@ def generate(args):
     print("*" * 100)
     print(
         f"Using {config._attn_implementation}, use_cache {config.use_cache},"
-        f"dtype {config.mindspore_dtype}, layer {config.num_hidden_layers}"
+        f"dtype {config.dtype}, layer {config.num_hidden_layers}"
     )
     print("Successfully loaded Qwen3ForCausalLM")
 
     # prepare inputs
-    input_ids = ms.Tensor(tokenizer([args.prompt], return_tensors="np").input_ids)
+    messages = [{"role": "user", "content": args.prompt}]
+    text = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True,
+        enable_thinking=True,  # Switches between thinking and non-thinking modes. Default is True.
+    )
+    input_ids = ms.Tensor(tokenizer([text], return_tensors="np").input_ids)
     model_inputs = {}
     model_inputs["input_ids"] = input_ids
 
@@ -51,7 +58,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="qwen3 demo.")
 
     parser.add_argument("--prompt", type=str, default="the secret to baking a really good cake is")
-    parser.add_argument("--model_name", type=str, default="Qwen/Qwen3-0.6B-Base", help="Path to the pre-trained model.")
+    parser.add_argument("--model_name", type=str, default="Qwen/Qwen3-0.6B", help="Path to the pre-trained model.")
     parser.add_argument(
         "--attn_implementation",
         type=str,
